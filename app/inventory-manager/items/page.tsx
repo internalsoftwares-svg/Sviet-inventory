@@ -9,7 +9,7 @@ import { Plus, Search, Package } from 'lucide-react'
 import Link from 'next/link'
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 40
 
 export default function IMItemsPage() {
   const [search, setSearch] = useState('')

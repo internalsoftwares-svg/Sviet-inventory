@@ -50,7 +50,7 @@ const UNIT_OPTIONS = [
   { value: 'units', label: 'Units' },
 ]
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 40
 
 type InventoryItem = {
   id: string
@@ -453,7 +453,14 @@ function AddItemModal({ onClose }: { onClose: () => void }) {
               <label className="block text-sm font-medium mb-1">Total Quantity</label>
               <input required type="number" min={1} value={formData.totalQuantity} onChange={(e) => setFormData({ ...formData, totalQuantity: Number.isNaN(Number(e.target.value)) ? 0 : Number(e.target.value) })} className="w-full px-3 py-2 border rounded-md" />
             </div>
-            <div><label className="block text-sm font-medium mb-1">Session Year</label><input required type="number" min={2000} max={new Date().getFullYear() + 1} value={formData.sessionYear} onChange={(e) => setFormData({ ...formData, sessionYear: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-md" /></div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Session Year</label>
+              <select required value={formData.sessionYear} onChange={(e) => setFormData({ ...formData, sessionYear: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-md">
+                {[2024, 2025, 2026, 2027].map((yr) => (
+                  <option key={yr} value={yr}>{yr}</option>
+                ))}
+              </select>
+            </div>
           </div>
           {/* Unit Price */}
           <div>
@@ -506,6 +513,7 @@ function EditItemModal({ item, onClose }: { item: any; onClose: () => void }) {
     category: item.category ?? '',
     unit: item.unit ?? 'pieces',
     totalQuantity: item.totalQuantity ?? item.availableQty ?? 0,
+    sessionYear: item.sessionYear ?? new Date().getFullYear(),
     description: item.description ?? '',
     unitPrice: item.unitPrice != null ? String(Number(item.unitPrice)) : '',
   })
@@ -543,6 +551,7 @@ function EditItemModal({ item, onClose }: { item: any; onClose: () => void }) {
     payload.append('category', formData.category)
     payload.append('unit', formData.unit)
     payload.append('totalQuantity', String(formData.totalQuantity))
+    payload.append('sessionYear', String(formData.sessionYear))
     payload.append('description', formData.description)
     if (formData.unitPrice) payload.append('unitPrice', formData.unitPrice)
     if (imageFile) payload.append('imageFile', imageFile)
@@ -572,9 +581,19 @@ function EditItemModal({ item, onClose }: { item: any; onClose: () => void }) {
               </select>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Total Quantity</label>
-            <input required type="number" min={1} value={formData.totalQuantity} onChange={(e) => setFormData({ ...formData, totalQuantity: Number.isNaN(Number(e.target.value)) ? 0 : Number(e.target.value) })} className="w-full px-3 py-2 border rounded-md" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Total Quantity</label>
+              <input required type="number" min={1} value={formData.totalQuantity} onChange={(e) => setFormData({ ...formData, totalQuantity: Number.isNaN(Number(e.target.value)) ? 0 : Number(e.target.value) })} className="w-full px-3 py-2 border rounded-md" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Session Year</label>
+              <select required value={formData.sessionYear} onChange={(e) => setFormData({ ...formData, sessionYear: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-md">
+                {[2024, 2025, 2026, 2027].map((yr) => (
+                  <option key={yr} value={yr}>{yr}</option>
+                ))}
+              </select>
+            </div>
           </div>
           {/* Unit Price */}
           <div>

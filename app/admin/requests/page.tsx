@@ -11,7 +11,7 @@ import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { TableWrapper } from '@/components/ui/TableWrapper'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 40
 
 export default function AdminRequestsPage() {
   const queryClient = useQueryClient()

@@ -45,6 +45,7 @@ type FormData = {
   category: string
   unit: string
   totalQuantity: number
+  sessionYear: number
   description: string
   unitPrice: string
 }
@@ -67,6 +68,7 @@ export default function IMEditItemPage() {
     category: '',
     unit: 'pieces',
     totalQuantity: 1,
+    sessionYear: new Date().getFullYear(),
     description: '',
     unitPrice: '',
   })
@@ -81,6 +83,7 @@ export default function IMEditItemPage() {
         category: item.category ?? '',
         unit: item.unit ?? 'pieces',
         totalQuantity: item.totalQuantity ?? item.availableQty ?? 1,
+        sessionYear: item.sessionYear ?? new Date().getFullYear(),
         description: item.description ?? '',
         unitPrice: item.unitPrice != null ? String(Number(item.unitPrice)) : '',
       })
@@ -126,6 +129,7 @@ export default function IMEditItemPage() {
     fd.append('category', form.category)
     fd.append('unit', form.unit)
     fd.append('totalQuantity', String(form.totalQuantity))
+    fd.append('sessionYear', String(form.sessionYear))
     fd.append('description', form.description.trim())
     if (form.unitPrice) fd.append('unitPrice', form.unitPrice)
     if (imageFile) fd.append('imageFile', imageFile)
@@ -190,19 +194,34 @@ export default function IMEditItemPage() {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Total Quantity <span className="text-red-500">*</span></label>
-          <input
-            required
-            type="number"
-            min={1}
-            value={form.totalQuantity}
-            onChange={(e) => setForm({ ...form, totalQuantity: Math.max(1, Number(e.target.value)) })}
-            className="w-40 px-3 py-2 border border-[--border-default] rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-black"
-          />
-          <p className="mt-1 text-xs text-[--ink-secondary]">
-            Currently available: {item.availableQty} {item.unit}
-          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Total Quantity <span className="text-red-500">*</span></label>
+            <input
+              required
+              type="number"
+              min={1}
+              value={form.totalQuantity}
+              onChange={(e) => setForm({ ...form, totalQuantity: Math.max(1, Number(e.target.value)) })}
+              className="w-full px-3 py-2 border border-[--border-default] rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-black"
+            />
+            <p className="mt-1 text-xs text-[--ink-secondary]">
+              Currently available: {item.availableQty} {item.unit}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Session Year <span className="text-red-500">*</span></label>
+            <select
+              required
+              value={form.sessionYear}
+              onChange={(e) => setForm({ ...form, sessionYear: Number(e.target.value) })}
+              className="w-full px-3 py-2 border border-[--border-default] rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-black"
+            >
+              {[2024, 2025, 2026, 2027].map((yr) => (
+                <option key={yr} value={yr}>{yr}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>

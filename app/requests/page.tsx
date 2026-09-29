@@ -9,7 +9,7 @@ import { formatDate } from '@/lib/utils'
 import { TableWrapper } from '@/components/ui/TableWrapper'
 import { Filter } from 'lucide-react'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 40
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'All' },

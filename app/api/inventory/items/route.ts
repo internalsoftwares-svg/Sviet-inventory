@@ -102,7 +102,11 @@ export async function GET(req: Request) {
         take: args.take,
         cursor: args.cursor,
         skip: args.skip,
-        orderBy: { createdAt: "desc" },
+        orderBy: [
+          { availableQty: "desc" },
+          { createdAt: "desc" },
+          { id: "asc" }
+        ],
         select: isPrivileged ? selectAdmin : selectPublic,
       }),
     () => prisma.inventoryItem.count({ where }),

@@ -21,6 +21,7 @@ async function parseInventoryUpdateRequest(req: Request) {
     const imageFile = formData.get("imageFile");
 
     const rawUnitPrice = formData.get("unitPrice")
+    const rawSessionYear = formData.get("sessionYear")
     return {
       body: {
         name: String(formData.get("name") ?? "").trim() || undefined,
@@ -30,6 +31,7 @@ async function parseInventoryUpdateRequest(req: Request) {
         totalQuantity: formData.get("totalQuantity") === null || formData.get("totalQuantity") === ""
           ? undefined
           : Number(formData.get("totalQuantity")),
+        sessionYear: rawSessionYear !== null && rawSessionYear !== "" ? Number(rawSessionYear) : undefined,
         imageUrl: String(formData.get("imageUrl") ?? "").trim() || undefined,
         unitPrice: rawUnitPrice !== null && rawUnitPrice !== "" ? Number(rawUnitPrice) : undefined,
       },

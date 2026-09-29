@@ -8,7 +8,7 @@ export interface CursorPage<T> {
 export async function paginateWithCursor<T extends { id: string }>(
   query: (args: { take: number; cursor?: { id: string }; skip?: number }) => Promise<T[]>,
   countQuery: () => Promise<number>,
-  { cursor, limit = 20 }: { cursor?: string; limit?: number }
+  { cursor, limit = 40 }: { cursor?: string; limit?: number }
 ): Promise<CursorPage<T>> {
   const take = Math.min(limit, 50) + 1;
 

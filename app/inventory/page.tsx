@@ -9,21 +9,22 @@ import { toast } from 'react-hot-toast'
 import { Package, Search, ShoppingCart, X } from 'lucide-react'
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 40
 
 export default function InventoryPage() {
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search, 450)
+  const [sessionYear, setSessionYear] = useState<number>(2026)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [notifyingId, setNotifyingId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const cart = useRequestStore()
 
   const inventoryQuery = useInfiniteQuery({
-    queryKey: ['inventory', debouncedSearch],
+    queryKey: ['inventory', debouncedSearch, sessionYear],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const res = await api.get('/inventory/items', { params: { q: debouncedSearch || undefined, cursor: pageParam, limit: PAGE_SIZE } })
+      const res = await api.get('/inventory/items', { params: { q: debouncedSearch || undefined, sessionYear, cursor: pageParam, limit: PAGE_SIZE } })
       return res.data as { data: InventoryItem[]; meta?: { nextCursor?: string | null } }
     },
     getNextPageParam: (lastPage) => lastPage.meta?.nextCursor ?? undefined,
@@ -102,6 +103,18 @@ export default function InventoryPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-[--ink-secondary]">Session</span>
+            <select
+              value={sessionYear}
+              onChange={(e) => setSessionYear(Number(e.target.value))}
+              className="px-3 py-2 border border-[--border-default] rounded-md focus:outline-none focus:ring-1 focus:ring-black text-sm"
+            >
+              {[2024, 2025, 2026, 2027].map((yr) => (
+                <option key={yr} value={yr}>{yr}</option>
+              ))}
+            </select>
+          </div>
           <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[--ink-disabled]" size={18} />
             <input
