@@ -3,7 +3,7 @@ import { getRequestUser } from '@/lib/api/session'
 import { apiError, apiSuccess } from '@/lib/api/response'
 import { ValidationError, UnauthorizedError, ForbiddenError, NotFoundError } from '@/lib/errors'
 import { z } from 'zod'
-import { writeAuditLog } from '@/lib/audit/log'
+
 import { invalidatePattern } from '@/lib/cache/redis'
 
 const VisibilitySchema = z.object({ hidden: z.boolean() })

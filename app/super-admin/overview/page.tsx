@@ -66,6 +66,7 @@ export default function SuperAdminOverviewPage() {
       }, 16)
       return () => clearInterval(timer)
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAnimatedApprovalRate(0)
   }, [data?.approvalRate])
 

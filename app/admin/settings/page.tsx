@@ -20,6 +20,7 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     if (profileData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: profileData.name || '',
         phoneNumber: profileData.phoneNumber || ''

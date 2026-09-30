@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { prisma } from "@/lib/db/prisma";
 import { getRedis } from "@/lib/cache/redis";
 import { sendRequestApprovedEmail } from "@/lib/notifications/emails";

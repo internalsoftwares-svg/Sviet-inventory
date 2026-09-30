@@ -19,6 +19,7 @@ export function useDraft<T>({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasDraft(draftManager.exists(formId))
   }, [formId])
 

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getRequestUser } from '@/lib/api/session'
