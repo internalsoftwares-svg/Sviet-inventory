@@ -12,6 +12,7 @@ interface ReturnModalProps {
     id: string
     itemName: string
     quantityFul: number | null
+    quantityAvailable: number
     unit: string
   }>
 }
@@ -22,8 +23,7 @@ export function ReturnModal({ isOpen, onClose, requestId, items }: ReturnModalPr
 
   // Filter items that actually can be returned
   const returnableItems = items.filter(item => {
-    const ful = item.quantityFul ?? 0
-    return ful > 0
+    return item.quantityAvailable > 0
   })
 
   // Using a ref to prevent infinite loops and unnecessary updates
@@ -32,7 +32,7 @@ export function ReturnModal({ isOpen, onClose, requestId, items }: ReturnModalPr
   useEffect(() => {
     if (isOpen && !initialized.current) {
       const initial: Record<string, number> = {}
-      items.filter(item => (item.quantityFul ?? 0) > 0).forEach(item => {
+      items.filter(item => item.quantityAvailable > 0).forEach(item => {
         initial[item.id] = 1
       })
       setReturnQuantities(initial)
@@ -117,7 +117,7 @@ export function ReturnModal({ isOpen, onClose, requestId, items }: ReturnModalPr
 
           <div className="space-y-3">
             {returnableItems.map(item => {
-              const max = item.quantityFul ?? 0
+              const max = item.quantityAvailable
               const currentVal = returnQuantities[item.id] || ''
               return (
                 <div key={item.id} className="flex items-center justify-between gap-4 p-3 border border-[--border-default] rounded-md">

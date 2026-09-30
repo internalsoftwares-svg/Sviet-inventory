@@ -362,12 +362,19 @@ export default function RequestDetailPage() {
           isOpen={isReturnModalOpen}
           onClose={() => setIsReturnModalOpen(false)}
           requestId={req.id}
-          items={req.items?.map((ri: any) => ({
-            id: ri.id,
-            itemName: ri.item.name,
-            quantityFul: ri.quantityFul,
-            unit: ri.item.unit,
-          }))}
+          items={req.items?.map((ri: any) => {
+            const alreadyReturned = (ri.returnRequestItems || [])
+              .filter((rrItem: any) => rrItem.returnRequest?.status !== 'REJECTED')
+              .reduce((sum: number, rrItem: any) => sum + (rrItem.quantity || 0), 0);
+              
+            return {
+              id: ri.id,
+              itemName: ri.item.name,
+              quantityFul: ri.quantityFul,
+              quantityAvailable: Math.max(0, (ri.quantityFul || 0) - alreadyReturned),
+              unit: ri.item.unit,
+            };
+          })}
         />
       )}
     </div>

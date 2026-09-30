@@ -16,7 +16,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const request = await prisma.request.findUnique({
     where: { id },
     include: {
-      items: { include: { item: true } },
+      items: { 
+        include: { 
+          item: true,
+          returnRequestItems: {
+            include: { returnRequest: true }
+          }
+        } 
+      },
       statusHistory: { orderBy: { createdAt: "asc" } },
     },
   });
