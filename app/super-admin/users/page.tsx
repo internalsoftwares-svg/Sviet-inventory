@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 
 interface UserRecord {
   id: string
@@ -20,14 +21,18 @@ interface UserRecord {
 const PAGE_SIZE = 50
 
 export default function SuperAdminUsersPage() {
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebouncedValue(searchTerm, 300)
+
   const usersQuery = useInfiniteQuery({
-    queryKey: ['super-admin-users'],
+    queryKey: ['super-admin-users', debouncedSearch],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const res = await api.get('/super-admin/users', { params: { cursor: pageParam, limit: PAGE_SIZE } })
+      const res = await api.get('/super-admin/users', { params: { cursor: pageParam, limit: PAGE_SIZE, search: debouncedSearch || undefined } })
       return res.data as { data: UserRecord[]; meta?: { nextCursor?: string | null } }
     },
     getNextPageParam: (lastPage) => lastPage.meta?.nextCursor ?? undefined,
+    placeholderData: keepPreviousData,
   })
 
   const users = useMemo(
@@ -49,6 +54,19 @@ export default function SuperAdminUsersPage() {
         <div>
           <h1 className="text-2xl font-display font-bold text-[--ink-primary]">User Management</h1>
           <p className="text-sm text-[--ink-secondary]">View all registered users and administrators across the platform.</p>
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white border border-[--border-default] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+          />
         </div>
       </div>
 

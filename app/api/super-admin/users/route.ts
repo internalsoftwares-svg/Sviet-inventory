@@ -13,6 +13,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const cursor = url.searchParams.get("cursor") ?? undefined;
   const limitParam = url.searchParams.get("limit") ?? undefined;
+  const searchParam = url.searchParams.get("search") ?? undefined;
   const limit = limitParam ? Number(limitParam) : 20;
 
   if (Number.isNaN(limit) || limit < 1 || limit > 50) {
@@ -31,9 +32,19 @@ export async function GET(req: Request) {
     }
   }
 
+  const whereClause = searchParam
+    ? {
+        OR: [
+          { name: { contains: searchParam, mode: "insensitive" as const } },
+          { email: { contains: searchParam, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
   const page = await prisma.user.findMany({
     take: Math.min(limit, 50),
     ...(decodedCursor ? { cursor: { id: decodedCursor.id }, skip: 1 } : {}),
+    where: whereClause,
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

@@ -2,10 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
-} from 'recharts'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { formatINR } from '@/lib/utils/format'
 import { useSessionYear } from '@/lib/hooks/use-session-year'
@@ -70,17 +67,6 @@ export default function SuperAdminOverviewPage() {
     setAnimatedApprovalRate(0)
   }, [data?.approvalRate])
 
-  const chartData = useMemo(() => {
-    const previousByMonth = new Map<number, number>()
-    ;(data?.previousYearSeries ?? []).forEach((row: { bucket: string; total: number }, i: number) => {
-      previousByMonth.set(i, row.total)
-    })
-    return (data?.series ?? []).map((row: { bucket: string; total: number }, i: number) => ({
-      month: new Date(row.bucket).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-      requests: row.total,
-      previousYear: previousByMonth.get(i) ?? null,
-    }))
-  }, [data])
 
   return (
     <div className="space-y-6 page-enter">
@@ -158,29 +144,7 @@ export default function SuperAdminOverviewPage() {
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-lg border border-[--border-default] shadow-sm min-w-0">
-        <h3 className="font-bold text-[--ink-primary] mb-6">Cross-Session Request Volume</h3>
-        {isLoading ? (
-          <div className="skeleton h-72 rounded" />
-        ) : (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height={288} minWidth={0}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-default)" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-secondary)' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-secondary)' }} />
-                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-default)', fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Line type="monotone" name="Current Year" dataKey="requests" stroke="var(--accent-primary)" strokeWidth={3} dot={{ r: 4, fill: 'var(--accent-primary)' }} activeDot={{ r: 6 }} />
-                <Line type="monotone" name="Previous Year" dataKey="previousYear" stroke="var(--ink-disabled)" strokeWidth={2} strokeDasharray="5 5" dot={false} connectNulls />
-              </LineChart>
-            </ResponsiveContainer>
-            {chartData.length === 0 && (
-              <p className="mt-4 text-sm text-[--ink-secondary]">No request data for this period.</p>
-            )}
-          </div>
-        )}
-      </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg border border-[--border-default] shadow-sm">
