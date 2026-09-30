@@ -6,7 +6,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url       = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -45,28 +46,29 @@ enum NotificationType {
 }
 
 model User {
-  id            String        @id @default(uuid())
-  email         String        @unique
-  name          String
-  employeeId    String?       @unique
-  department    String?
-  designation   String?
-  phoneNumber   String?
-  avatarUrl     String?
-  role          Role          @default(USER)
-  isActive      Boolean       @default(true)
-  isApproved    Boolean       @default(false)
-  passwordHash  String
-  lastLoginAt   DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  employeeId   String?   @unique
+  department   String?
+  designation  String?
+  phoneNumber  String?
+  avatarUrl    String?
+  role         Role      @default(USER)
+  isActive     Boolean   @default(true)
+  isApproved   Boolean   @default(false)
+  passwordHash String
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  requests      Request[]
-  notifications Notification[]
-  sessions      UserSession[]
-  loginAttempts LoginAttempt[]
-  stockAlerts   StockAlert[]
-  auditLogs     AuditLog[]
+  requests       Request[]
+  notifications  Notification[]
+  sessions       UserSession[]
+  loginAttempts  LoginAttempt[]
+  stockAlerts    StockAlert[]
+  auditLogs      AuditLog[]
+  returnRequests ReturnRequest[]
 
   @@index([email])
   @@index([role])
@@ -88,32 +90,33 @@ model UserSession {
 }
 
 model InventoryItem {
-  id            String        @id @default(uuid())
-  name          String
-  slug          String        @unique
-  description   String?
-  imageUrl      String?
-  category      String?
-  unit          String
-  totalQuantity Int           @default(0)
-  availableQty  Int           @default(0)
-  sessionYear   Int
-  isActive      Boolean       @default(true)
-  isStale       Boolean       @default(false)
-  staleMarkedAt DateTime?
-  staleMarkedBy String?
-  unitPrice     Decimal?      @db.Decimal(10, 2)
-  currency      String        @default("INR")
-  isHiddenFromUsers Boolean    @default(false)
-  hiddenAt      DateTime?
-  hiddenBy      String?
-  createdBy     String
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                String    @id @default(uuid())
+  name              String
+  slug              String    @unique
+  description       String?
+  imageUrl          String?
+  category          String?
+  unit              String
+  totalQuantity     Int       @default(0)
+  availableQty      Int       @default(0)
+  sessionYear       Int
+  isActive          Boolean   @default(true)
+  isStale           Boolean   @default(false)
+  staleMarkedAt     DateTime?
+  staleMarkedBy     String?
+  unitPrice         Decimal?  @db.Decimal(10, 2)
+  currency          String    @default("INR")
+  isHiddenFromUsers Boolean   @default(false)
+  hiddenAt          DateTime?
+  hiddenBy          String?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  requestItems  RequestItem[]
-  stockAlerts   StockAlert[]
-  stockHistory  StockHistory[]
+  requestItems       RequestItem[]
+  stockAlerts        StockAlert[]
+  stockHistory       StockHistory[]
+  returnRequestItems ReturnRequestItem[]
 
   @@index([sessionYear])
   @@index([category])
@@ -122,30 +125,31 @@ model InventoryItem {
 }
 
 model Request {
-  id            String               @id @default(uuid())
-  userId        String
-  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status        RequestStatus        @default(REQUESTED)
-  notes         String?
-  adminId       String?
-  adminNotes    String?
-  inventoryManagerId String?
+  id                    String        @id @default(uuid())
+  userId                String
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status                RequestStatus @default(REQUESTED)
+  notes                 String?
+  adminId               String?
+  adminNotes            String?
+  inventoryManagerId    String?
   inventoryManagerNotes String?
-  invoiceUrl    String?
-  invoiceNumber String?              @unique
-  receiptNumber String?              @unique
-  receiptUrl    String?
-  allocatedByAdminAt DateTime?
-  sessionYear   Int
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  processedAt   DateTime?
-  cancelledAt   DateTime?
-  inventoryProcessedAt DateTime?
+  invoiceUrl            String?
+  invoiceNumber         String?       @unique
+  receiptNumber         String?       @unique
+  receiptUrl            String?
+  allocatedByAdminAt    DateTime?
+  sessionYear           Int
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  processedAt           DateTime?
+  cancelledAt           DateTime?
+  inventoryProcessedAt  DateTime?
 
-  items         RequestItem[]
-  statusHistory RequestStatusHistory[]
-  notifications Notification[]
+  items          RequestItem[]
+  statusHistory  RequestStatusHistory[]
+  notifications  Notification[]
+  returnRequests ReturnRequest[]
 
   @@index([userId])
   @@index([status])
@@ -155,35 +159,36 @@ model Request {
 }
 
 model RequestItem {
-  id          String        @id @default(uuid())
-  requestId   String
-  request     Request       @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  itemId      String
-  item        InventoryItem @relation(fields: [itemId], references: [id])
-  quantityReq Int
-  quantityAllocated Int?
-  quantityFul Int?
-  createdAt   DateTime      @default(now())
+  id                 String              @id @default(uuid())
+  requestId          String
+  request            Request             @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  itemId             String
+  item               InventoryItem       @relation(fields: [itemId], references: [id])
+  quantityReq        Int
+  quantityAllocated  Int?
+  quantityFul        Int?
+  createdAt          DateTime            @default(now())
+  returnRequestItems ReturnRequestItem[]
 
   @@index([requestId])
   @@index([itemId])
 }
 
 model ExpenditureRecord {
-  id                String   @id @default(uuid())
+  id                String    @id @default(uuid())
   requestId         String
   requestItemId     String
   itemId            String
   itemName          String
   category          String?
-  unitPrice         Decimal  @db.Decimal(10, 2)
+  unitPrice         Decimal   @db.Decimal(10, 2)
   quantityFulfilled Int
-  totalAmount       Decimal  @db.Decimal(12, 2)
+  totalAmount       Decimal   @db.Decimal(12, 2)
   sessionYear       Int
   approvedAt        DateTime
   approvedBy        String
   department        String?
-  isReversed        Boolean  @default(false)
+  isReversed        Boolean   @default(false)
   reversedAt        DateTime?
 
   @@index([itemId])
@@ -195,14 +200,14 @@ model ExpenditureRecord {
 }
 
 model RequestStatusHistory {
-  id         String        @id @default(uuid())
+  id         String         @id @default(uuid())
   requestId  String
-  request    Request       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  request    Request        @relation(fields: [requestId], references: [id], onDelete: Cascade)
   fromStatus RequestStatus?
   toStatus   RequestStatus
   changedBy  String
   notes      String?
-  createdAt  DateTime      @default(now())
+  createdAt  DateTime       @default(now())
 
   @@index([requestId])
 }
@@ -283,6 +288,34 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([userId])
-  @@index([entity, entityId])
   @@index([createdAt])
+}
+
+model ReturnRequest {
+  id          String        @id @default(uuid())
+  requestId   String
+  request     Request       @relation(fields: [requestId], references: [id])
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  status      RequestStatus @default(PENDING)
+  notes       String?
+  adminNotes  String?
+  processedAt DateTime?
+  processedBy String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  items ReturnRequestItem[]
+}
+
+model ReturnRequestItem {
+  id              String        @id @default(uuid())
+  returnRequestId String
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  requestItemId   String
+  requestItem     RequestItem   @relation(fields: [requestItemId], references: [id])
+  itemId          String
+  item            InventoryItem @relation(fields: [itemId], references: [id])
+  quantity        Int
+  createdAt       DateTime      @default(now())
 }

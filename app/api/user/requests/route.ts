@@ -121,7 +121,7 @@ export async function POST(req: Request) {
   const items = parsed.data.items;
   const itemIds = items.map((item) => item.itemId);
   const inventoryItems = await prisma.inventoryItem.findMany({
-    where: { id: { in: itemIds }, isActive: true, isStale: false, sessionYear },
+    where: { id: { in: itemIds }, isActive: true, isStale: false },
   });
 
   if (inventoryItems.length !== items.length) {

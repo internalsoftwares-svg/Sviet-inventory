@@ -36,11 +36,13 @@ const USER_NAV: NavItem[] = [
   { label: 'Dashboard',   href: '/dashboard', icon: LayoutDashboard },
   { label: 'Inventory',   href: '/inventory', icon: Package },
   { label: 'My Requests', href: '/requests',  icon: ClipboardList },
+  { label: 'My Returns',  href: '/returns',   icon: Archive },
   { label: 'Profile',     href: '/profile',   icon: User },
 ]
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Requests',     href: '/admin/requests',     icon: Inbox },
+  { label: 'Returns',      href: '/admin/returns',      icon: ClipboardList },
   { label: 'Inventory',    href: '/admin/inventory',    icon: Archive },
   { label: 'Items',        href: '/admin/items',        icon: Activity },
   { label: 'Employees',    href: '/admin/employees',    icon: Users },
@@ -53,6 +55,7 @@ const ADMIN_NAV: NavItem[] = [
 const IM_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/inventory-manager',           icon: LayoutDashboard, exact: true },
   { label: 'Requests',  href: '/inventory-manager/requests',  icon: ClipboardList },
+  { label: 'Returns',   href: '/inventory-manager/returns',   icon: ClipboardList },
   { label: 'All Items', href: '/inventory-manager/items',     icon: Archive },
   { label: 'Add Item',  href: '/inventory-manager/items/new', icon: Plus, exact: true },
   { label: 'Profile',   href: '/inventory-manager/profile',   icon: User },

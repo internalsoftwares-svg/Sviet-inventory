@@ -10,6 +10,7 @@ import { ArrowLeft, Download, XCircle, RotateCcw, CheckCircle2 } from 'lucide-re
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
+import { ReturnModal } from '@/components/ui/return-modal'
 
 export default function RequestDetailPage() {
   const params = useParams()
@@ -17,6 +18,7 @@ export default function RequestDetailPage() {
   const queryClient = useQueryClient()
   const requestId = params.id as string
   const [confirmAction, setConfirmAction] = useState<'cancel' | 're-request' | null>(null)
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
 
   const { data: req, isLoading } = useQuery({
     queryKey: ['request', requestId],
@@ -97,7 +99,7 @@ export default function RequestDetailPage() {
                       href={`/api/user/requests/${req.id}/invoice-download`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-md font-medium text-sm hover:bg-[--accent-hover] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-md font-medium text-sm hover:bg-[--accent-hover] transition-colors cursor-pointer"
                     >
                       <Download size={15} />
                       Invoice PDF
@@ -106,11 +108,18 @@ export default function RequestDetailPage() {
                       href={`/api/user/requests/${req.id}/receipt-download`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] rounded-md font-medium text-sm hover:bg-[--bg-subtle] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] rounded-md font-medium text-sm hover:bg-[--bg-subtle] transition-colors cursor-pointer"
                     >
                       <Download size={15} />
                       Receipt PDF
                     </a>
+                    <button
+                      onClick={() => setIsReturnModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] rounded-md font-medium text-sm hover:bg-[--bg-subtle] transition-colors cursor-pointer"
+                    >
+                      <RotateCcw size={15} />
+                      Return Items
+                    </button>
                   </>
                 )}
 
@@ -118,7 +127,7 @@ export default function RequestDetailPage() {
                   <button
                     onClick={() => setConfirmAction('cancel')}
                     disabled={cancelMutation.isPending || reRequestMutation.isPending}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] text-[--ink-secondary] rounded-md font-medium text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] text-[--ink-secondary] rounded-md font-medium text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   >
                     <XCircle size={15} />
                     {cancelMutation.isPending ? 'Cancelling…' : 'Cancel Request'}
@@ -129,7 +138,7 @@ export default function RequestDetailPage() {
                   <button
                     onClick={() => setConfirmAction('re-request')}
                     disabled={cancelMutation.isPending || reRequestMutation.isPending}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] text-[--ink-secondary] rounded-md font-medium text-sm hover:bg-[--accent-primary-bg] hover:text-black transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] text-[--ink-secondary] rounded-md font-medium text-sm hover:bg-[--accent-primary-bg] hover:text-black transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   >
                     <RotateCcw size={15} />
                     {reRequestMutation.isPending ? 'Resubmitting…' : 'Re-Request'}
@@ -347,6 +356,20 @@ export default function RequestDetailPage() {
         onConfirm={handleConfirm}
         onCancel={() => setConfirmAction(null)}
       />
+
+      {req && isApproved && (
+        <ReturnModal
+          isOpen={isReturnModalOpen}
+          onClose={() => setIsReturnModalOpen(false)}
+          requestId={req.id}
+          items={req.items?.map((ri: any) => ({
+            id: ri.id,
+            itemName: ri.item.name,
+            quantityFul: ri.quantityFul,
+            unit: ri.item.unit,
+          }))}
+        />
+      )}
     </div>
   )
 }
