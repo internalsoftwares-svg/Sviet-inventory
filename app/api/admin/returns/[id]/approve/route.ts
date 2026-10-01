@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getRequestUser } from '@/lib/api/session'
-
+import { generateReturnInvoiceNumber } from '@/lib/api/invoice'
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getRequestUser()
@@ -18,7 +18,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       include: {
         items: {
           include: { item: true }
-        }
+        },
+        request: true
       }
     })
 
@@ -38,7 +39,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           status: 'PENDING',
           adminNotes: adminNotes || null,
           processedAt: new Date(),
-          processedBy: user.id
+          processedBy: user.id,
+          returnInvoiceNumber: generateReturnInvoiceNumber(returnReq.request.sessionYear)
         }
       })
 

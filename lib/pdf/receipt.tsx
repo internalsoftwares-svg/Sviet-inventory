@@ -37,6 +37,7 @@ interface ReceiptPayload {
   items: ReceiptItem[];
   collegeName: string;
   collegeAddress: string;
+  isReturn?: boolean;
 }
 
 export async function renderReceiptPdf(payload: ReceiptPayload) {
@@ -56,7 +57,7 @@ export async function renderReceiptPdf(payload: ReceiptPayload) {
         </View>
 
         <View>
-          <Text style={styles.meta}>Issued To</Text>
+          <Text style={styles.meta}>{payload.isReturn ? "Returned By" : "Issued To"}</Text>
           <Text>{payload.issuedToName}</Text>
           <Text style={styles.meta}>{payload.issuedToDepartment ?? ''}</Text>
         </View>

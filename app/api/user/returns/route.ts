@@ -19,8 +19,19 @@ export async function GET(req: Request) {
     const status = searchParams.get('status')
     const limit = parseInt(searchParams.get('limit') || '40')
     const cursor = searchParams.get('cursor')
+    const search = searchParams.get('search')
 
     const where: any = { userId: user.id }
+
+    if (search) {
+      where.items = {
+        some: {
+          item: {
+            name: { contains: search, mode: 'insensitive' }
+          }
+        }
+      }
+    }
 
     if (status && status !== 'ALL') {
       where.status = status as RequestStatus

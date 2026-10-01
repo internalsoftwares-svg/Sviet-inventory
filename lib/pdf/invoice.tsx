@@ -38,6 +38,7 @@ interface InvoicePayload {
   collegeName: string;
   collegeAddress: string;
   collegeSealText: string;
+  isReturn?: boolean;
 }
 
 export async function renderInvoicePdf(payload: InvoicePayload) {
@@ -57,7 +58,7 @@ export async function renderInvoicePdf(payload: InvoicePayload) {
         </View>
 
         <View>
-          <Text style={styles.meta}>Issued To</Text>
+          <Text style={styles.meta}>{payload.isReturn ? "Returned By" : "Issued To"}</Text>
           <Text>{payload.userName}</Text>
           <Text style={styles.meta}>
             {payload.userDepartment ?? ""} {payload.userEmployeeId ?? ""}

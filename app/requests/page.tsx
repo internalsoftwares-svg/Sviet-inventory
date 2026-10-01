@@ -10,7 +10,8 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { TableWrapper } from '@/components/ui/TableWrapper'
-import { Filter } from 'lucide-react'
+import { Filter, Search } from 'lucide-react'
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 
 const PAGE_SIZE = 40
 
@@ -25,13 +26,16 @@ const STATUS_OPTIONS = [
 
 export default function RequestsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 500)
 
   const requestsQuery = useInfiniteQuery({
-    queryKey: ['user-requests-all', statusFilter],
+    queryKey: ['user-requests-all', statusFilter, debouncedSearch],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       const params: Record<string, string> = { limit: String(PAGE_SIZE) }
       if (statusFilter !== 'ALL') params.status = statusFilter
+      if (debouncedSearch) params.search = debouncedSearch
       if (pageParam) params.cursor = pageParam
       const res = await api.get('/user/requests', { params })
       return res.data as { data: any[]; meta?: { nextCursor?: string | null } }
@@ -54,9 +58,20 @@ export default function RequestsPage() {
           <p className="text-[--ink-secondary] text-sm">View and track your inventory requests</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-[--ink-secondary] shrink-0" />
-          <select
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by item name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-1.5 text-sm border border-[--border-default] rounded-md focus:outline-none focus:ring-1 focus:ring-black w-full sm:w-64"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-[--ink-secondary] shrink-0 hidden sm:block" />
+            <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="text-sm border border-[--border-default] rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-black bg-white"
@@ -65,6 +80,7 @@ export default function RequestsPage() {
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
+        </div>
         </div>
       </div>
 

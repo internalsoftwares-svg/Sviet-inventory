@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate } from '@/lib/utils'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Download } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ReturnDetailPage() {
@@ -51,6 +51,29 @@ export default function ReturnDetailPage() {
               </div>
               <StatusBadge status={req.status} />
             </div>
+
+            {req.status === 'APPROVED' && (
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={`/api/user/returns/${req.id}/invoice-download`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-md font-medium text-sm hover:bg-[--accent-hover] transition-colors cursor-pointer"
+                >
+                  <Download size={15} />
+                  Return Invoice PDF
+                </a>
+                <a
+                  href={`/api/user/returns/${req.id}/receipt-download`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[--border-default] rounded-md font-medium text-sm hover:bg-[--bg-subtle] transition-colors cursor-pointer"
+                >
+                  <Download size={15} />
+                  Return Receipt PDF
+                </a>
+              </div>
+            )}
           </div>
         </div>
 

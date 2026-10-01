@@ -32,13 +32,14 @@ export async function GET(req: Request) {
     limit: url.searchParams.get("limit") ?? undefined,
     dateFrom: url.searchParams.get("dateFrom") ?? undefined,
     dateTo: url.searchParams.get("dateTo") ?? undefined,
+    search: url.searchParams.get("search") ?? undefined,
   });
 
   if (!parsed.success) {
     return apiError(new ValidationError("Invalid query parameters.", parsed.error.flatten()));
   }
 
-  const { status, sessionYear, cursor, limit = 20, dateFrom, dateTo } = parsed.data;
+  const { status, sessionYear, cursor, limit = 20, dateFrom, dateTo, search } = parsed.data;
   let decodedCursor: { id: string; createdAt: Date } | null = null;
   if (cursor) {
     try {
@@ -63,6 +64,16 @@ export async function GET(req: Request) {
     where.createdAt = {
       ...(from ? { gte: from } : {}),
       ...(to ? { lte: to } : {}),
+    };
+  }
+
+  if (search) {
+    where.items = {
+      some: {
+        item: {
+          name: { contains: search, mode: "insensitive" },
+        },
+      },
     };
   }
 

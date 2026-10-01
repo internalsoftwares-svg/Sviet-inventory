@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getRequestUser } from '@/lib/api/session'
-
+import { generateReturnReceiptNumber } from '@/lib/api/invoice'
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getRequestUser()
@@ -13,7 +13,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const returnReq = await prisma.returnRequest.findUnique({
       where: { id },
-      include: { items: true }
+      include: { 
+        items: true,
+        request: true
+      }
     })
 
     if (!returnReq) {
@@ -31,7 +34,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         data: {
           status: 'APPROVED',
           processedAt: new Date(),
-          processedBy: user.id
+          processedBy: user.id,
+          returnReceiptNumber: generateReturnReceiptNumber(returnReq.request.sessionYear)
         }
       })
 

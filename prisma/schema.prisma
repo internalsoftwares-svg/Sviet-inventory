@@ -305,6 +305,9 @@ model ReturnRequest {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  returnInvoiceNumber String?       @unique
+  returnReceiptNumber String?       @unique
+
   items ReturnRequestItem[]
 }
 

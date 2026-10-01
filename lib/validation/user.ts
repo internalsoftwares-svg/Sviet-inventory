@@ -7,6 +7,7 @@ export const UserRequestFilterSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
+  search: z.string().optional(),
 });
 
 export const NotificationFilterSchema = z.object({
