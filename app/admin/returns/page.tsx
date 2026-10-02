@@ -9,7 +9,8 @@ import { api } from '@/lib/api/client'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate } from '@/lib/utils'
 import { formatINR } from '@/lib/utils/format'
-import { Filter, X, CheckCircle, XCircle } from 'lucide-react'
+import { Filter, X, CheckCircle, XCircle, Search } from 'lucide-react'
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { TableWrapper } from '@/components/ui/TableWrapper'
@@ -19,14 +20,17 @@ const PAGE_SIZE = 40
 export default function AdminReturnsPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearch = useDebouncedValue(searchQuery, 300)
   const [selectedReturn, setSelectedReturn] = useState<any | null>(null)
 
   const returnsQuery = useInfiniteQuery({
-    queryKey: ['admin-returns', statusFilter],
+    queryKey: ['admin-returns', statusFilter, debouncedSearch],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       const params: any = { limit: PAGE_SIZE, cursor: pageParam }
       if (statusFilter && statusFilter !== 'ALL') params.status = statusFilter
+      if (debouncedSearch) params.search = debouncedSearch
       const res = await api.get('/admin/returns', { params })
       return res.data as { data: any[]; meta?: { nextCursor?: string | null } }
     },
@@ -62,6 +66,11 @@ export default function AdminReturnsPage() {
             <option value="REJECTED">Rejected</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[--ink-secondary]" size={16} />
+            <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-1.5 border border-[--border-default] rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-black w-full sm:w-64" />
+          </div>
         </div>
       </div>
 

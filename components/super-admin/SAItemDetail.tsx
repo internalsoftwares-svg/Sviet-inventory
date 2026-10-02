@@ -3,18 +3,13 @@
 import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell
-} from 'recharts'
-import { ArrowLeft, Download } from 'lucide-react'
+import { ArrowLeft, Download, Search } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { AsyncButton } from '@/components/ui/AsyncButton'
 import { formatINR } from '@/lib/utils/format'
 import { useSessionYear } from '@/lib/hooks/use-session-year'
 import { useXlsxExport } from '@/lib/hooks/use-xlsx-export'
-
-const COLORS = ['#166534', '#14532D', '#15803D', '#22C55E', '#86EFAC']
 
 const controlCls =
   'text-sm border border-[--border-default] rounded-md px-3 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-black'
@@ -45,7 +40,28 @@ interface AllocationRecord {
   imName: string | null
 }
 
-const PAGE_SIZE = 25
+interface ReturnRecord {
+  id: string
+  quantity: number
+  createdAt: string
+  status: string
+  notes: string | null
+  adminNotes: string | null
+  processedAt: string | null
+  employeeName: string
+  department: string | null
+  adminName: string | null
+}
+
+interface StockRecord {
+  id: string
+  changeType: string
+  quantityDelta: number
+  quantityAfter: number
+  createdAt: string
+  notes: string | null
+  changedByName: string | null
+}
 
 export function SAItemDetail({
   itemId,
@@ -62,6 +78,9 @@ export function SAItemDetail({
   const [monthFrom, setMonthFrom] = useState('')
   const [monthTo, setMonthTo] = useState('')
   const [offset, setOffset] = useState(0)
+  const [pageSize, setPageSize] = useState(25)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeTab, setActiveTab] = useState<'allocations' | 'returns' | 'stock'>('allocations')
 
   const statsFilters = { monthFrom: monthFrom || undefined, monthTo: monthTo || undefined }
 
@@ -73,18 +92,35 @@ export function SAItemDetail({
     },
   })
 
-  const allocationFilters = { sessionYear, monthFrom: monthFrom || undefined, monthTo: monthTo || undefined, limit: PAGE_SIZE, offset }
-
+  // Allocations Query
+  const allocationFilters = { sessionYear, monthFrom: monthFrom || undefined, monthTo: monthTo || undefined, limit: pageSize, offset, search: searchQuery || undefined }
   const { data: allocationsData, isLoading: isAllocationsLoading, isFetching: isAllocationsFetching, isError: isAllocationsError, refetch: refetchAllocations } = useQuery({
     queryKey: ['sa-item-allocations', itemId, allocationFilters],
     queryFn: () => api.get(`/super-admin/items/${itemId}/approved`, { params: allocationFilters }).then((r) => r.data),
     staleTime: 3 * 60 * 1000,
     placeholderData: keepPreviousData,
+    enabled: activeTab === 'allocations',
   })
 
-  const records: AllocationRecord[] = allocationsData?.data?.records ?? []
-  const summary = allocationsData?.data?.summary
-  const hasMore = allocationsData?.meta?.hasMore
+  // Returns Query
+  const returnsFilters = { limit: pageSize, offset, search: searchQuery || undefined }
+  const { data: returnsData, isLoading: isReturnsLoading, isFetching: isReturnsFetching, isError: isReturnsError, refetch: refetchReturns } = useQuery({
+    queryKey: ['sa-item-returns', itemId, returnsFilters],
+    queryFn: () => api.get(`/super-admin/items/${itemId}/returns`, { params: returnsFilters }).then(r => r.data),
+    enabled: activeTab === 'returns',
+    staleTime: 3 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  })
+
+  // Stock History Query
+  const stockFilters = { limit: pageSize, offset, search: searchQuery || undefined }
+  const { data: stockData, isLoading: isStockLoading, isFetching: isStockFetching, isError: isStockError, refetch: refetchStock } = useQuery({
+    queryKey: ['sa-item-stock', itemId, stockFilters],
+    queryFn: () => api.get(`/super-admin/items/${itemId}/stock-history`, { params: stockFilters }).then(r => r.data),
+    enabled: activeTab === 'stock',
+    staleTime: 3 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  })
 
   function resetPaging() {
     setOffset(0)
@@ -93,11 +129,46 @@ export function SAItemDetail({
   const exportParams = new URLSearchParams({ sessionYear: String(sessionYear) })
   if (monthFrom) exportParams.set('monthFrom', monthFrom)
   if (monthTo)   exportParams.set('monthTo', monthTo)
+  if (searchQuery) exportParams.set('search', searchQuery)
 
   const { isExporting, exportFile: handleExport } = useXlsxExport(
     `${exportBasePath}/items/${itemId}/allocations?${exportParams}`,
     `export-item-${itemId}.xlsx`
   )
+
+  let currentRecords: any[] = []
+  let currentSummary = null
+  let currentHasMore = false
+  let isCurrentLoading = false
+  let isCurrentFetching = false
+  let currentError = false
+  let refetchCurrent = () => {}
+
+  if (activeTab === 'allocations') {
+    currentRecords = allocationsData?.data?.records ?? []
+    currentSummary = allocationsData?.data?.summary
+    currentHasMore = allocationsData?.meta?.hasMore
+    isCurrentLoading = isAllocationsLoading
+    isCurrentFetching = isAllocationsFetching
+    currentError = isAllocationsError
+    refetchCurrent = refetchAllocations
+  } else if (activeTab === 'returns') {
+    currentRecords = returnsData?.data?.records ?? []
+    currentSummary = returnsData?.data?.summary
+    currentHasMore = returnsData?.meta?.hasMore
+    isCurrentLoading = isReturnsLoading
+    isCurrentFetching = isReturnsFetching
+    currentError = isReturnsError
+    refetchCurrent = refetchReturns
+  } else if (activeTab === 'stock') {
+    currentRecords = stockData?.data?.records ?? []
+    currentSummary = stockData?.data?.summary
+    currentHasMore = stockData?.meta?.hasMore
+    isCurrentLoading = isStockLoading
+    isCurrentFetching = isStockFetching
+    currentError = isStockError
+    refetchCurrent = refetchStock
+  }
 
   return (
     <div className="space-y-6 page-enter">
@@ -154,124 +225,151 @@ export function SAItemDetail({
         </div>
       )}
 
-      <div className="bg-white p-6 rounded-lg border border-[--border-default] shadow-sm">
-        <h3 className="font-bold text-[--ink-primary] mb-6">Year-over-Year Demand</h3>
-        {isLoading ? (
-          <div className="skeleton h-72 rounded" />
-        ) : (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.yearlyDemand ?? []}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-default)" />
-                <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-secondary)' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-secondary)' }} />
-                <RechartsTooltip cursor={{ fill: 'var(--bg-subtle)' }} contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-default)', fontSize: '12px' }} />
-                <Bar dataKey="totalRequested" name="Total Requested" fill="var(--ink-disabled)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="totalApproved" name="Total Approved" fill="var(--accent-primary)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            {(data?.yearlyDemand ?? []).length === 0 && (
-              <p className="mt-4 text-sm text-[--ink-secondary]">No historical demand data for this item.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white p-6 rounded-lg border border-[--border-default] shadow-sm">
-        <h3 className="font-bold text-[--ink-primary] mb-6">Usage by Department</h3>
-        {isLoading ? (
-          <div className="skeleton h-72 rounded" />
-        ) : (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.departmentUsage ?? []} layout="vertical" margin={{ left: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-default)" />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-secondary)' }} />
-                <YAxis dataKey="department" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-secondary)' }} />
-                <RechartsTooltip cursor={{ fill: 'var(--bg-subtle)' }} contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-default)', fontSize: '12px' }} />
-                <Bar dataKey="qty" name="Quantity" radius={[0, 4, 4, 0]}>
-                  {(data?.departmentUsage ?? []).map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            {(data?.departmentUsage ?? []).length === 0 && (
-              <p className="mt-4 text-sm text-[--ink-secondary]">No department usage data for this period.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Allocation log — who received this item, when, and by whom it was approved/allocated */}
+      {/* History Section with Tabs */}
       <div className="bg-white rounded-lg border border-[--border-default] overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-[--border-default]">
-          <div>
-            <h3 className="font-bold text-[--ink-primary]">Allocation History</h3>
-            <p className="text-xs text-[--ink-secondary]">Approved allocations for Session Year {sessionYear}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 pt-4 pb-4 border-b border-[--border-default]">
+          <div className="flex p-1 space-x-1 bg-gray-100/80 rounded-lg overflow-x-auto whitespace-nowrap scrollbar-hide w-full sm:w-auto border border-gray-200">
+            <button
+              className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${activeTab === 'allocations' ? 'bg-white text-black shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
+              onClick={() => { setActiveTab('allocations'); setOffset(0); setSearchQuery('') }}
+            >
+              Allocation History
+            </button>
+            <button
+              className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${activeTab === 'returns' ? 'bg-white text-black shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
+              onClick={() => { setActiveTab('returns'); setOffset(0); setSearchQuery('') }}
+            >
+              Return History
+            </button>
+            <button
+              className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${activeTab === 'stock' ? 'bg-white text-black shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'}`}
+              onClick={() => { setActiveTab('stock'); setOffset(0); setSearchQuery('') }}
+            >
+              Stock Adjustments
+            </button>
           </div>
-          <AsyncButton variant="secondary" isPending={isExporting} pendingLabel="Exporting…" onClick={handleExport}>
-            <Download size={14} />
-            Export (.xlsx)
-          </AsyncButton>
+          {activeTab === 'allocations' && (
+            <AsyncButton variant="secondary" isPending={isExporting} pendingLabel="Exporting…" onClick={handleExport} className="shrink-0">
+              <Download size={14} />
+              Export (.xlsx)
+            </AsyncButton>
+          )}
         </div>
 
-        {summary && (
-          <div className="flex flex-wrap gap-6 px-6 py-3 bg-[--bg-subtle] border-b border-[--border-default] text-sm">
-            <div className="flex flex-col">
-              <span className="text-xs text-[--ink-secondary]">Total Records</span>
-              <span className="font-semibold">{summary.totalRecords}</span>
+        {currentSummary && (
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between px-6 py-3 bg-[--bg-subtle] border-b border-[--border-default] text-sm">
+            <div className="flex flex-wrap gap-6">
+              <div className="flex flex-col">
+                <span className="text-xs text-[--ink-secondary]">Total Records</span>
+                <span className="font-semibold">{currentSummary.totalRecords}</span>
+              </div>
+              {activeTab === 'allocations' && currentSummary.totalUnits !== undefined && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-[--ink-secondary]">Total Units</span>
+                  <span className="font-semibold">{currentSummary.totalUnits}</span>
+                </div>
+              )}
+              {activeTab === 'allocations' && currentSummary.totalAmount !== undefined && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-[--ink-secondary]">Total Amount</span>
+                  <span className="font-semibold text-green-700">{formatINR(currentSummary.totalAmount)}</span>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-[--ink-secondary]">Total Units</span>
-              <span className="font-semibold">{summary.totalUnits}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-[--ink-secondary]">Total Amount</span>
-              <span className="font-semibold text-green-700">{formatINR(summary.totalAmount)}</span>
+            <div className="relative w-full sm:w-64 shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[--ink-secondary]" size={14} />
+              <input
+                type="text"
+                placeholder={activeTab === 'allocations' ? "Search employee, admin, or IM..." : "Search..."}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setOffset(0)
+                }}
+                className={controlCls + ' pl-8 w-full'}
+              />
             </div>
           </div>
         )}
 
-        {isAllocationsError && (
+        {currentError && (
           <div className="px-6 py-4 bg-red-50 border-b border-red-200 text-red-800 flex items-center justify-between">
-            <span className="text-sm">Couldn&apos;t load the allocation log.</span>
-            <button onClick={() => refetchAllocations()} disabled={isAllocationsFetching} className="text-sm font-medium underline disabled:opacity-50 disabled:cursor-not-allowed">{isAllocationsFetching ? 'Retrying…' : 'Retry'}</button>
+            <span className="text-sm">Couldn&apos;t load the records.</span>
+            <button onClick={() => refetchCurrent()} disabled={isCurrentFetching} className="text-sm font-medium underline disabled:opacity-50 disabled:cursor-not-allowed">{isCurrentFetching ? 'Retrying…' : 'Retry'}</button>
           </div>
         )}
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-b border-[--border-default] bg-white">
+          <div className="flex items-center gap-2 text-sm text-[--ink-secondary]">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value))
+                setOffset(0)
+              }}
+              className="border border-[--border-default] rounded px-2 py-1 text-[--ink-primary] bg-white focus:outline-none focus:ring-1 focus:ring-black"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            {currentSummary && (
+              <span className="ml-4">
+                Showing {currentSummary.totalRecords === 0 ? 0 : offset + 1} to {Math.min(offset + pageSize, currentSummary.totalRecords)} of {currentSummary.totalRecords}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOffset((o) => Math.max(0, o - pageSize))}
+              disabled={offset === 0 || isCurrentFetching}
+              className="px-3 py-1.5 text-sm font-medium border border-[--border-default] rounded bg-white text-[--ink-primary] hover:bg-[--bg-subtle] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setOffset((o) => o + pageSize)}
+              disabled={!currentHasMore || isCurrentFetching}
+              className="px-3 py-1.5 text-sm font-medium border border-[--border-default] rounded bg-white text-[--ink-primary] hover:bg-[--bg-subtle] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
 
         <div className="relative overflow-x-auto">
-          {isAllocationsFetching && !isAllocationsLoading && (
+          {isCurrentFetching && !isCurrentLoading && (
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-black animate-pulse" />
           )}
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-[--bg-subtle] border-b border-[--border-default]">
               <tr>
-                {['Employee', 'Department', 'Units', 'Unit Price', 'Total', 'Date Approved', 'Date Allocated', 'Approved By', 'Alloc. By (IM)'].map((h) => (
-                  <th key={h} className="px-5 py-3 font-medium text-[--ink-secondary]">{h}</th>
-                ))}
+                {activeTab === 'allocations' && ['Employee', 'Department', 'Units', 'Unit Price', 'Total', 'Date Approved', 'Date Allocated', 'Approved By', 'Alloc. By (IM)'].map(h => <th key={h} className="px-5 py-3 font-medium text-[--ink-secondary]">{h}</th>)}
+                {activeTab === 'returns' && ['Employee', 'Department', 'Qty Returned', 'Return Date', 'Status', 'Processed By'].map(h => <th key={h} className="px-5 py-3 font-medium text-[--ink-secondary]">{h}</th>)}
+                {activeTab === 'stock' && ['Action', 'Qty Change', 'Stock After', 'Date', 'Changed By', 'Notes'].map(h => <th key={h} className="px-5 py-3 font-medium text-[--ink-secondary]">{h}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-[--border-default]">
-              {isAllocationsLoading ? (
+              {isCurrentLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 9 }).map((__, j) => (
+                    {Array.from({ length: activeTab === 'allocations' ? 9 : 6 }).map((__, j) => (
                       <td key={j} className="px-5 py-3"><div className="skeleton h-4 rounded w-full" /></td>
                     ))}
                   </tr>
                 ))
-              ) : records.length === 0 ? (
+              ) : currentRecords.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-5 py-10 text-center text-[--ink-secondary]">
-                    No approved allocations for this item in this period.
+                    No records found.
                   </td>
                 </tr>
-              ) : (
-                records.map((r) => (
+              ) : activeTab === 'allocations' ? (
+                (currentRecords as AllocationRecord[]).map((r) => (
                   <tr key={r.id} className="hover:bg-[--bg-canvas] transition-colors">
                     <td className="px-5 py-3 font-medium text-[--ink-primary]">
-                      <Link href={`${employeeBasePath}/${r.userId}`} className="hover:underline">{r.employeeName}</Link>
+                      {r.userId ? <Link href={`${employeeBasePath}/${r.userId}`} className="hover:underline">{r.employeeName}</Link> : r.employeeName}
                     </td>
                     <td className="px-5 py-3 text-[--ink-secondary]">{r.department ?? '—'}</td>
                     <td className="px-5 py-3 text-right tabular-nums">{r.quantityFulfilled}</td>
@@ -283,23 +381,46 @@ export function SAItemDetail({
                     <td className="px-5 py-3">{r.imName ?? '—'}</td>
                   </tr>
                 ))
-              )}
+              ) : activeTab === 'returns' ? (
+                (currentRecords as ReturnRecord[]).map((r) => (
+                  <tr key={r.id} className="hover:bg-[--bg-canvas] transition-colors">
+                    <td className="px-5 py-3 font-medium text-[--ink-primary]">{r.employeeName}</td>
+                    <td className="px-5 py-3 text-[--ink-secondary]">{r.department ?? '—'}</td>
+                    <td className="px-5 py-3 tabular-nums font-semibold">{r.quantity}</td>
+                    <td className="px-5 py-3">{format(new Date(r.createdAt), 'd MMM yyyy')}</td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.status === 'APPROVED' ? 'bg-green-100 text-green-800' : r.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">{r.adminName ?? '—'}</td>
+                  </tr>
+                ))
+              ) : activeTab === 'stock' ? (
+                (currentRecords as StockRecord[]).map((r) => (
+                  <tr key={r.id} className="hover:bg-[--bg-canvas] transition-colors">
+                    <td className="px-5 py-3 font-medium">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.changeType === 'ADDED' || r.changeType === 'RESTORED' ? 'bg-green-100 text-green-800' : r.changeType === 'FULFILLED' || r.changeType === 'STALE_REMOVED' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {r.changeType}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 tabular-nums font-semibold text-right">
+                      <span className={r.quantityDelta > 0 ? 'text-green-600' : r.quantityDelta < 0 ? 'text-red-600' : ''}>
+                        {r.quantityDelta > 0 ? '+' : ''}{r.quantityDelta}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 tabular-nums text-right">{r.quantityAfter}</td>
+                    <td className="px-5 py-3">{format(new Date(r.createdAt), 'd MMM yyyy, h:mm a')}</td>
+                    <td className="px-5 py-3 text-[--ink-secondary]">{r.changedByName ?? '—'}</td>
+                    <td className="px-5 py-3 text-xs text-[--ink-secondary] max-w-[200px] truncate" title={r.notes || ''}>
+                      {r.notes ?? '—'}
+                    </td>
+                  </tr>
+                ))
+              ) : null}
             </tbody>
           </table>
         </div>
-
-        {hasMore && (
-          <div className="flex justify-center py-4 border-t border-[--border-default]">
-            <AsyncButton
-              variant="secondary"
-              isPending={isAllocationsFetching}
-              pendingLabel="Loading..."
-              onClick={() => setOffset((o) => o + PAGE_SIZE)}
-            >
-              Load More
-            </AsyncButton>
-          </div>
-        )}
       </div>
     </div>
   )

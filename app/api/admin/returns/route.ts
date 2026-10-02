@@ -16,10 +16,19 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '40')
     const cursor = searchParams.get('cursor')
     const status = searchParams.get('status')
+    const search = searchParams.get('search')
 
     const where: any = {}
     if (status && status !== 'ALL') {
       where.status = status
+    }
+    if (search) {
+      where.OR = [
+        { id: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { employeeId: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+      ]
     }
 
     const returns = await prisma.returnRequest.findMany({

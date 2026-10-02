@@ -31,6 +31,8 @@ export async function GET(
 
   if (isNaN(yearRaw)) return apiError(new ValidationError("Invalid sessionYear."));
 
+  const search = searchParams.get("search") || undefined;
+
   // An explicit month range replaces the session-year scope: sessions span two
   // calendar years, so ANDing both would hide data the user asked for by date.
   const range = monthRangeUtc(monthFrom, monthTo);
@@ -43,6 +45,11 @@ export async function GET(
     if (range.lte) dateFilters.push(Prisma.sql`er."approvedAt" <= ${range.lte}`);
   } else {
     dateFilters.push(Prisma.sql`er."sessionYear" = ${yearRaw}`);
+  }
+
+  if (search) {
+    const s = `%${search}%`;
+    dateFilters.push(Prisma.sql`(u.name ILIKE ${s} OR u_admin.name ILIKE ${s} OR u_im.name ILIKE ${s})`);
   }
 
   const where = Prisma.join(dateFilters, " AND ");
@@ -92,6 +99,10 @@ export async function GET(
         COALESCE(SUM(er."quantityFulfilled"), 0)::int  as "totalUnits",
         COUNT(*)::int                                  as "totalRecords"
       FROM "ExpenditureRecord" er
+      JOIN "Request" r     ON r.id   = er."requestId"
+      JOIN "User"    u     ON u.id   = r."userId"
+      LEFT JOIN "User" u_admin ON u_admin.id = er."approvedBy"
+      LEFT JOIN "User" u_im    ON u_im.id    = r."inventoryManagerId"
       WHERE ${where}
     `,
   ]);

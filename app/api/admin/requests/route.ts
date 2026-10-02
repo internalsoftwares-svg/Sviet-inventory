@@ -25,6 +25,7 @@ export async function GET(req: Request) {
     dateFrom: url.searchParams.get("dateFrom") ?? undefined,
     dateTo: url.searchParams.get("dateTo") ?? undefined,
     sessionYear: url.searchParams.get("sessionYear") ?? undefined,
+    search: url.searchParams.get("search") ?? undefined,
     cursor: url.searchParams.get("cursor") ?? undefined,
     limit: url.searchParams.get("limit") ?? undefined,
   });
@@ -41,6 +42,7 @@ export async function GET(req: Request) {
     sessionYear,
     dateFrom,
     dateTo,
+    search,
     cursor,
     limit = 20,
   } = parsed.data;
@@ -78,6 +80,15 @@ export async function GET(req: Request) {
 
   if (itemId) {
     where.items = { some: { itemId } };
+  }
+
+  if (search) {
+    where.OR = [
+      { id: { contains: search, mode: "insensitive" } },
+      { user: { name: { contains: search, mode: "insensitive" } } },
+      { user: { employeeId: { contains: search, mode: "insensitive" } } },
+      { user: { email: { contains: search, mode: "insensitive" } } },
+    ];
   }
 
   const page = await paginateWithCursor(

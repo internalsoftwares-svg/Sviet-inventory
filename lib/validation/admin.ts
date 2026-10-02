@@ -38,6 +38,7 @@ export const AdminRequestFilterSchema = z.object({
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   sessionYear: z.coerce.number().int().optional(),
+  search: z.string().optional(),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),
 });

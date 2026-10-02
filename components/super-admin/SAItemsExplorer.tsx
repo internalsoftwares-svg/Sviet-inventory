@@ -12,7 +12,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import Link from 'next/link'
 import { SAExportButton } from './SAExportButton'
 import { useSessionYear } from '@/lib/hooks/use-session-year'
@@ -80,6 +80,7 @@ export function SAItemsExplorer({
   const [sortBy, setSortBy]       = useState<SortBy>('amount')
   const [order, setOrder]         = useState<Order>('desc')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const filters = {
     sessionYear,
@@ -107,7 +108,12 @@ export function SAItemsExplorer({
     })),
   })
 
-  const items: ItemRow[] = itemsData?.items ?? []
+  const items: ItemRow[] = useMemo(() => {
+    const rawItems = itemsData?.items ?? []
+    if (!searchQuery) return rawItems
+    const lower = searchQuery.toLowerCase()
+    return rawItems.filter((i: ItemRow) => i.name.toLowerCase().includes(lower))
+  }, [itemsData?.items, searchQuery])
 
   const topItems = useMemo(() => {
     return [...items]
@@ -140,7 +146,19 @@ export function SAItemsExplorer({
           <h1 className="text-24 font-semibold text-ink-1">Items</h1>
           <p className="text-14 text-ink-3">Stock, fulfillment, and spend for every catalog item</p>
         </div>
-        <SAExportButton type="items" filters={filters as Record<string, unknown>} basePath={exportBasePath} />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" size={16} />
+            <input
+              type="text"
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-3 py-1.5 text-13 border border-border rounded-md bg-surface text-ink-1 focus:outline-none focus:ring-1 focus:ring-border-focus w-full sm:w-64"
+            />
+          </div>
+          <SAExportButton type="items" filters={filters as Record<string, unknown>} basePath={exportBasePath} />
+        </div>
       </div>
 
       {isItemsError && (
@@ -245,6 +263,20 @@ export function SAItemsExplorer({
         <p className="text-12 text-ink-3">
           Total Stock = all units ever added · Consumed = fulfilled from requests · Remaining = currently available
         </p>
+
+        <div className="flex justify-start mb-4">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" size={14} />
+            <input
+              type="text"
+              placeholder="Search table..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={controlCls + ' pl-8 w-full'}
+            />
+          </div>
+        </div>
+
 
         <div className="relative bg-surface rounded-lg border border-border overflow-hidden">
           {isItemsFetching && !isItemsLoading && (
