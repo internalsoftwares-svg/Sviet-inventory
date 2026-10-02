@@ -2,13 +2,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
+
 
 import Image from 'next/image'
 import { useMemo, useState } from 'react'
 import { normalizeDriveImageUrl } from '@/lib/utils/drive-url'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
-import { Plus, Search, Edit2, Archive, Package, EyeOff, Eye, IndianRupee } from 'lucide-react'
+import { Plus, Search, Edit2, Archive, Package, EyeOff, Eye, IndianRupee, Upload } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
@@ -75,7 +77,7 @@ function getErrorMessage(err: unknown, fallback: string) {
 
 export default function AdminInventoryPage() {
   const queryClient = useQueryClient()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useSessionState('admin_inventory_page_search', '')
   const debouncedSearch = useDebouncedValue(search, 450)
   const [isAdding, setIsAdding] = useState(false)
   const [staleAction, setStaleAction] = useState<{ id: string; name: string; action: 'mark' | 'unmark' } | null>(null)
@@ -491,13 +493,29 @@ function AddItemModal({ onClose }: { onClose: () => void }) {
           </div>
           <div><label className="block text-sm font-medium mb-1">Description (Optional)</label><textarea rows={2} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 border rounded-md" /></div>
           <div>
-            <label className="block text-sm font-medium mb-1">Item Image</label>
-            <input type="file" accept="image/*" onChange={(e) => {
-              const nextFile = e.target.files?.[0] ?? null
-              setImageFile(nextFile)
-              setImagePreview(nextFile ? URL.createObjectURL(nextFile) : null)
-            }} className="w-full text-sm" />
-            {imagePreview ? <div className="relative mt-3 aspect-4/3 overflow-hidden rounded-md border border-[--border-default] bg-[--bg-subtle]"><Image fill unoptimized src={imagePreview} alt="Selected item preview" className="object-cover" /></div> : <p className="mt-2 text-xs text-[--ink-secondary]">Upload an image to show on inventory cards.</p>}
+            <label className="block text-sm font-medium mb-2">Item Image</label>
+            <div className="flex items-start space-x-4">
+              <div className="relative w-24 h-24 rounded-lg border border-[--border-default] bg-[--bg-subtle] overflow-hidden flex items-center justify-center text-[--ink-disabled] shrink-0">
+                {imagePreview ? (
+                  <Image fill unoptimized src={imagePreview} alt="Selected item preview" className="object-cover" />
+                ) : (
+                  <Package size={28} />
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-[--ink-secondary] hover:text-black border border-[--border-default] rounded-md px-3 py-2 hover:bg-[--bg-subtle] transition-colors w-fit">
+                  <Upload size={16} />
+                  <span>{imagePreview ? 'Replace Image' : 'Upload Image'}</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
+                    const nextFile = e.target.files?.[0] ?? null
+                    setImageFile(nextFile)
+                    setImagePreview(nextFile ? URL.createObjectURL(nextFile) : null)
+                  }} className="sr-only" />
+                </label>
+                <p className="mt-1 text-xs text-[--ink-secondary]">JPG, PNG, WebP · Max 7MB</p>
+                {imageFile && <p className="mt-1 text-xs text-green-700 truncate max-w-[200px]">{imageFile.name} selected</p>}
+              </div>
+            </div>
           </div>
           <div className="pt-4 flex space-x-3">
             <button type="button" onClick={onClose} className="flex-1 py-2 border rounded-md font-medium hover:bg-[--bg-subtle]">Cancel</button>
@@ -622,13 +640,29 @@ function EditItemModal({ item, onClose }: { item: any; onClose: () => void }) {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Replace Image</label>
-            <input type="file" accept="image/*" onChange={(e) => {
-              const nextFile = e.target.files?.[0] ?? null
-              setImageFile(nextFile)
-              setImagePreview(nextFile ? URL.createObjectURL(nextFile) : item.imageUrl ?? null)
-            }} className="w-full text-sm" />
-            {imagePreview ? <div className="relative mt-3 aspect-4/3 overflow-hidden rounded-md border border-[--border-default] bg-[--bg-subtle]"><Image fill unoptimized src={imagePreview} alt={formData.name || 'Item preview'} className="object-cover" /></div> : <p className="mt-2 text-xs text-[--ink-secondary]">No image uploaded yet.</p>}
+            <label className="block text-sm font-medium mb-2">Item Image</label>
+            <div className="flex items-start space-x-4">
+              <div className="relative w-24 h-24 rounded-lg border border-[--border-default] bg-[--bg-subtle] overflow-hidden flex items-center justify-center text-[--ink-disabled] shrink-0">
+                {imagePreview ? (
+                  <Image fill unoptimized src={imagePreview} alt={formData.name || 'Item preview'} className="object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                ) : (
+                  <Package size={28} />
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-[--ink-secondary] hover:text-black border border-[--border-default] rounded-md px-3 py-2 hover:bg-[--bg-subtle] transition-colors w-fit">
+                  <Upload size={16} />
+                  <span>{imagePreview ? 'Replace Image' : 'Upload Image'}</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
+                    const nextFile = e.target.files?.[0] ?? null
+                    setImageFile(nextFile)
+                    setImagePreview(nextFile ? URL.createObjectURL(nextFile) : normalizeDriveImageUrl(item.imageUrl) ?? null)
+                  }} className="sr-only" />
+                </label>
+                <p className="mt-1 text-xs text-[--ink-secondary]">JPG, PNG, WebP · Max 7MB</p>
+                {imageFile && <p className="mt-1 text-xs text-green-700 truncate max-w-[200px]">{imageFile.name} selected</p>}
+              </div>
+            </div>
           </div>
           <div><label className="block text-sm font-medium mb-1">Description (Optional)</label><textarea rows={2} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 border rounded-md" /></div>
           <div className="pt-4 flex space-x-3">

@@ -14,13 +14,14 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { TableWrapper } from '@/components/ui/TableWrapper'
+import { useSessionState } from '@/hooks/useSessionState'
 
 const PAGE_SIZE = 40
 
 export default function AdminRequestsPage() {
   const queryClient = useQueryClient()
-  const [statusFilter, setStatusFilter] = useState<string>('ALL')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useSessionState<string>('admin_requests_page_status', 'ALL')
+  const [searchQuery, setSearchQuery] = useSessionState<string>('admin_requests_page_search', '')
   const debouncedSearch = useDebouncedValue(searchQuery, 300)
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null)
 

@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
+
 
 import { useMemo, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -18,7 +20,7 @@ const PAGE_SIZE = 40
 
 export default function InventoryManagerReturnsPage() {
   const queryClient = useQueryClient()
-  const [statusFilter, setStatusFilter] = useState<string>('PENDING')
+  const [statusFilter, setStatusFilter] = useSessionState<string>('inventory-manager_returns_page_status', 'PENDING')
   const [selectedReturn, setSelectedReturn] = useState<any | null>(null)
 
   const returnsQuery = useInfiniteQuery({

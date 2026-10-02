@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
+
 
 import { useMemo, useState } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
@@ -24,8 +26,8 @@ const STATUS_OPTIONS = [
 ]
 
 export default function ReturnsPage() {
-  const [statusFilter, setStatusFilter] = useState('ALL')
-  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useSessionState('returns_page_status', 'ALL')
+  const [search, setSearch] = useSessionState('returns_page_search', '')
   const debouncedSearch = useDebouncedValue(search, 500)
 
   const returnsQuery = useInfiniteQuery({

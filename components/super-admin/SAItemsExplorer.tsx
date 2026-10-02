@@ -4,6 +4,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { useSessionState } from '@/hooks/useSessionState'
 import { useQuery, useQueries, keepPreviousData } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
 import { formatINR } from '@/lib/utils/format'
@@ -74,13 +75,13 @@ export function SAItemsExplorer({
   exportBasePath?: string
 }) {
   const [sessionYear, setSessionYear] = useSessionYear()
-  const [monthFrom, setMonthFrom] = useState('')
-  const [monthTo, setMonthTo]     = useState('')
-  const [category, setCategory]   = useState('')
-  const [sortBy, setSortBy]       = useState<SortBy>('amount')
-  const [order, setOrder]         = useState<Order>('desc')
+  const [monthFrom, setMonthFrom] = useSessionState('sa_items_monthFrom', '')
+  const [monthTo, setMonthTo]     = useSessionState('sa_items_monthTo', '')
+  const [category, setCategory]   = useSessionState('sa_items_category', '')
+  const [sortBy, setSortBy]       = useSessionState<SortBy>('sa_items_sortBy', 'amount')
+  const [order, setOrder]         = useSessionState<Order>('sa_items_order', 'desc')
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useSessionState('sa_items_searchQuery', '')
 
   const filters = {
     sessionYear,

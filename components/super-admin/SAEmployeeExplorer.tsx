@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useSessionState } from '@/hooks/useSessionState'
 import { SAFilterBar } from './SAFilterBar'
 import { SARequestsTable } from './SARequestsTable'
 import { SAExportButton } from './SAExportButton'
@@ -19,7 +19,7 @@ export function SAEmployeeExplorer({
   exportBasePath?: string
   employeeBasePath?: string | null
 }) {
-  const [filters, setFilters] = useState<SAFilters>(DEFAULT_FILTERS)
+  const [filters, setFilters] = useSessionState<SAFilters>('sa_employee_explorer_filters', DEFAULT_FILTERS)
 
   function handleFiltersChange(patch: Partial<SAFilters>) {
     setFilters((prev) => ({ ...prev, ...patch }))

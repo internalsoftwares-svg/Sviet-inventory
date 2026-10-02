@@ -7,7 +7,9 @@ import { useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { api } from '@/lib/api/client'
-import { Check, X, Loader2, UserPlus, Eye, EyeOff, ChevronDown } from 'lucide-react'
+import { Check, X, Loader2, UserPlus, Eye, EyeOff, ChevronDown, Search } from 'lucide-react'
+import { useSessionState } from '@/hooks/useSessionState'
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 
 interface PendingUser {
   id: string
@@ -273,12 +275,16 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null)
   const [modalAction, setModalAction] = useState<'approve' | 'reject' | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useSessionState<string>('app_admin_users_search', '')
+  const debouncedSearch = useDebouncedValue(searchQuery, 300)
 
   const usersQuery = useInfiniteQuery({
-    queryKey: ['admin-pending-users'],
+    queryKey: ['admin-pending-users', debouncedSearch],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const res = await api.get('/admin/users', { params: { status: 'pending', cursor: pageParam, limit: 20 } })
+      const params: any = { status: 'pending', cursor: pageParam, limit: 20 }
+      if (debouncedSearch) params.search = debouncedSearch
+      const res = await api.get('/admin/users', { params })
       return res.data
     },
     getNextPageParam: (lastPage) => lastPage.meta?.nextCursor ?? undefined,
@@ -343,9 +349,21 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-[--border-default] overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-[--border-default]">
-          <h2 className="font-semibold text-[--ink-primary]">Pending Registrations</h2>
-          <p className="text-xs text-[--ink-secondary] mt-0.5">Department users who self-registered and are awaiting your approval.</p>
+        <div className="px-6 py-4 border-b border-[--border-default] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold text-[--ink-primary]">Pending Registrations</h2>
+            <p className="text-xs text-[--ink-secondary] mt-0.5">Department users who self-registered and are awaiting your approval.</p>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[--ink-secondary]" />
+            <input
+              type="text"
+              placeholder="Search pending users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-[--border-default] rounded-md text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-colors"
+            />
+          </div>
         </div>
 
         {usersQuery.isLoading ? (

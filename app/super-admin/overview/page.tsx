@@ -1,4 +1,5 @@
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
 
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
@@ -16,8 +17,8 @@ function SkeletonCard() {
 
 export default function SuperAdminOverviewPage() {
   const [sessionYear, setSessionYear] = useSessionYear()
-  const [monthFrom, setMonthFrom] = useState('')
-  const [monthTo, setMonthTo] = useState('')
+  const [monthFrom, setMonthFrom] = useSessionState('sa_overview_monthFrom', '')
+  const [monthTo, setMonthTo] = useSessionState('sa_overview_monthTo', '')
   const [animatedApprovalRate, setAnimatedApprovalRate] = useState(0)
 
   const filters = { sessionYear, granularity: 'monthly', monthFrom: monthFrom || undefined, monthTo: monthTo || undefined }

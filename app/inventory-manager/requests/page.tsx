@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
+
 
 import { useMemo, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -52,7 +54,7 @@ const STATUS_OPTIONS = [
 
 export default function InventoryManagerRequestsPage() {
   const queryClient = useQueryClient()
-  const [statusFilter, setStatusFilter] = useState('PENDING')
+  const [statusFilter, setStatusFilter] = useSessionState('inventory-manager_requests_page_status', 'PENDING')
   const [selectedRequest, setSelectedRequest] = useState<InventoryRequest | null>(null)
   const [managerNotes, setManagerNotes] = useState('')
   const [pendingAction, setPendingAction] = useState<'confirm' | 'cancel' | null>(null)

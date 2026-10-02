@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
+
 
 import { useMemo, useState } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
@@ -15,9 +17,9 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 const PAGE_SIZE = 40
 
 export default function InventoryPage() {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useSessionState('inventory_page_search', '')
   const debouncedSearch = useDebouncedValue(search, 450)
-  const [sessionYear, setSessionYear] = useState<number>(2026)
+  const [sessionYear, setSessionYear] = useSessionState<number>('inventory_page_year', 2026)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [notifyingId, setNotifyingId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)

@@ -1,4 +1,5 @@
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
 
 import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
@@ -75,11 +76,11 @@ export function SAItemDetail({
   exportBasePath?: string
 }) {
   const [sessionYear, setSessionYear] = useSessionYear()
-  const [monthFrom, setMonthFrom] = useState('')
-  const [monthTo, setMonthTo] = useState('')
+  const [monthFrom, setMonthFrom] = useSessionState('sa_item_detail_monthFrom', '')
+  const [monthTo, setMonthTo] = useSessionState('sa_item_detail_monthTo', '')
   const [offset, setOffset] = useState(0)
   const [pageSize, setPageSize] = useState(25)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useSessionState('sa_item_detail_searchQuery', '')
   const [activeTab, setActiveTab] = useState<'allocations' | 'returns' | 'stock'>('allocations')
 
   const statsFilters = { monthFrom: monthFrom || undefined, monthTo: monthTo || undefined }

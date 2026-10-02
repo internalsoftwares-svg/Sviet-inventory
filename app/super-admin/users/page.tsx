@@ -1,4 +1,5 @@
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
 
 import { useMemo, useState } from 'react'
 import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query'
@@ -22,7 +23,7 @@ interface UserRecord {
 const PAGE_SIZE = 50
 
 export default function SuperAdminUsersPage() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useSessionState('sa_users_searchTerm', '')
   const debouncedSearch = useDebouncedValue(searchTerm, 300)
   
   // Password Reset Modal State

@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
+import { useSessionState } from '@/hooks/useSessionState'
+
 
 import Image from 'next/image'
 import { useMemo, useState } from 'react'
@@ -15,7 +17,7 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 const PAGE_SIZE = 40
 
 export default function IMItemsPage() {
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useSessionState('inventory-manager_items_page_search', '')
   const debouncedSearch = useDebouncedValue(search, 450)
 
   const inventoryQuery = useInfiniteQuery({

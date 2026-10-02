@@ -21,6 +21,9 @@ export function useLogout() {
         channel.postMessage({ type: 'LOGOUT' })
         channel.close()
       }
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear()
+      }
       router.push('/login')
     }
   }, [queryClient, router])
