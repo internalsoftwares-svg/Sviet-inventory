@@ -11,6 +11,7 @@ const QuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).optional(),
   sessionYear: z.coerce.number().int().optional(),
   status: z.string().optional(),
+  search: z.string().optional(),
 })
 
 export async function GET(req: Request) {
@@ -26,6 +27,7 @@ export async function GET(req: Request) {
     limit: url.searchParams.get('limit') ?? undefined,
     sessionYear: url.searchParams.get('sessionYear') ?? undefined,
     status: url.searchParams.get('status') ?? undefined,
+    search: url.searchParams.get('search') ?? undefined,
   })
 
   if (!parsed.success) {
@@ -44,7 +46,15 @@ export async function GET(req: Request) {
     }
   }
 
-  const where: Record<string, unknown> = {
+  const where: any = {
+    ...(parsed.data.search ? {
+      OR: [
+        { id: { contains: parsed.data.search, mode: 'insensitive' } },
+        { invoiceNumber: { contains: parsed.data.search, mode: 'insensitive' } },
+        { user: { name: { contains: parsed.data.search, mode: 'insensitive' } } },
+        { user: { employeeId: { contains: parsed.data.search, mode: 'insensitive' } } },
+      ]
+    } : {}),
     status: parsed.data.status ?? 'PENDING',
     ...(parsed.data.sessionYear ? { sessionYear: parsed.data.sessionYear } : {}),
   }

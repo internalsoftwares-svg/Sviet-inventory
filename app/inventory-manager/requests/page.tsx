@@ -11,7 +11,8 @@ import { api } from '@/lib/api/client'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate } from '@/lib/utils'
 import { formatINR } from '@/lib/utils/format'
-import { Filter, X, CheckCircle2, Ban } from 'lucide-react'
+import { Filter, X, CheckCircle2, Ban, Search } from 'lucide-react'
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { TableWrapper } from '@/components/ui/TableWrapper'
@@ -55,16 +56,19 @@ const STATUS_OPTIONS = [
 export default function InventoryManagerRequestsPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useSessionState('inventory-manager_requests_page_status', 'PENDING')
+  const [searchQuery, setSearchQuery] = useSessionState('im_requests_search', '')
+  const debouncedSearch = useDebouncedValue(searchQuery, 300)
   const [selectedRequest, setSelectedRequest] = useState<InventoryRequest | null>(null)
   const [managerNotes, setManagerNotes] = useState('')
   const [pendingAction, setPendingAction] = useState<'confirm' | 'cancel' | null>(null)
 
   const requestsQuery = useInfiniteQuery({
-    queryKey: ['im-all-requests', statusFilter],
+    queryKey: ['im-all-requests', statusFilter, debouncedSearch],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       const params: Record<string, string> = { limit: '50' }
       if (statusFilter !== 'ALL') params.status = statusFilter
+      if (debouncedSearch) params.search = debouncedSearch
       if (pageParam) params.cursor = pageParam
       const res = await api.get('/inventory-manager/requests', { params })
       return res.data as { data: InventoryRequest[]; meta?: { nextCursor?: string | null } }
@@ -122,8 +126,13 @@ export default function InventoryManagerRequestsPage() {
           <p className="text-sm text-[--ink-secondary]">Review and act on admin-approved requests</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-[--ink-secondary] shrink-0" />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[--ink-secondary]" size={16} />
+            <input type="text" placeholder="Search requests..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full sm:w-64 pl-9 pr-3 py-1.5 text-sm border border-[--border-default] rounded-md focus:outline-none focus:ring-1 focus:ring-black bg-white" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-[--ink-secondary] shrink-0" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -134,6 +143,7 @@ export default function InventoryManagerRequestsPage() {
             ))}
           </select>
         </div>
+      </div>
       </div>
 
       {isError && (

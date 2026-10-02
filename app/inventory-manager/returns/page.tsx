@@ -11,7 +11,8 @@ import { api } from '@/lib/api/client'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate } from '@/lib/utils'
 import { formatINR } from '@/lib/utils/format'
-import { Filter, X, CheckCircle, XCircle } from 'lucide-react'
+import { Filter, X, CheckCircle, XCircle, Search } from 'lucide-react'
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { TableWrapper } from '@/components/ui/TableWrapper'
@@ -21,14 +22,17 @@ const PAGE_SIZE = 40
 export default function InventoryManagerReturnsPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useSessionState<string>('inventory-manager_returns_page_status', 'PENDING')
+  const [searchQuery, setSearchQuery] = useSessionState('im_returns_search', '')
+  const debouncedSearch = useDebouncedValue(searchQuery, 300)
   const [selectedReturn, setSelectedReturn] = useState<any | null>(null)
 
   const returnsQuery = useInfiniteQuery({
-    queryKey: ['im-returns', statusFilter],
+    queryKey: ['im-returns', statusFilter, debouncedSearch],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       const params: any = { limit: PAGE_SIZE, cursor: pageParam }
       if (statusFilter && statusFilter !== 'ALL') params.status = statusFilter
+      if (debouncedSearch) params.search = debouncedSearch
       const res = await api.get('/inventory-manager/returns', { params })
       return res.data as { data: any[]; meta?: { nextCursor?: string | null } }
     },
@@ -50,8 +54,13 @@ export default function InventoryManagerReturnsPage() {
           <p className="text-sm text-[--ink-secondary]">Verify and restock returned items</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-[--ink-secondary] shrink-0" />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[--ink-secondary]" size={16} />
+            <input type="text" placeholder="Search returns..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full sm:w-64 pl-9 pr-3 py-1.5 text-sm border border-[--border-default] rounded-md focus:outline-none focus:ring-1 focus:ring-black bg-white" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-[--ink-secondary] shrink-0" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -63,6 +72,7 @@ export default function InventoryManagerReturnsPage() {
             <option value="REJECTED">Rejected</option>
           </select>
         </div>
+      </div>
       </div>
 
       {isError && (
